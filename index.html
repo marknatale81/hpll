@@ -1,1691 +1,289 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Little League Draft Board</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>High Plains LL Pitch Tracker</title>
   <style>
     :root {
-      --border: #e3e3e3;
-      --text: #111;
-      --muted: #555;
-      --bg: #fff;
-      --chip: #f6f6f6;
-      --shadow: 0 1px 10px rgba(0,0,0,.06);
-      --radius: 14px;
+      color-scheme: light;
+      --bg: #f5f7fa;
+      --card: #ffffff;
+      --text: #1e293b;
+      --muted: #475569;
+      --accent: #005f9e;
+      --accent-hover: #004c7e;
+      --border: #d8e1ea;
+      --ok: #0f766e;
     }
+
+    * { box-sizing: border-box; }
+
     body {
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      margin: 24px;
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
       color: var(--text);
-      background: #fafafa;
     }
-    .wrap { max-width: 980px; }
-    h1 { margin: 0 0 6px; font-size: 24px; }
-    p { margin: 0 0 16px; color: var(--muted); }
-    h2 { margin: 18px 0 10px; font-size: 16px; }
-    .sub { color: var(--muted); font-size: 12px; font-weight: 500; }
 
-    .toolbar {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      align-items: center;
-      margin: 12px 0 18px;
+    .page {
+      max-width: 900px;
+      margin: 2rem auto;
+      padding: 0 1rem;
     }
-    .toolbar .group {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 10px 12px;
-      box-shadow: var(--shadow);
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-    input[type="search"] {
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 8px 10px;
-      min-width: 240px;
-    }
-    select, button {
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 8px 10px;
-      background: white;
-    }
-    button { cursor: pointer; }
-    .pill {
-      display: inline-flex;
-      gap: 8px;
-      align-items: center;
-      padding: 6px 10px;
-      border: 1px solid var(--border);
-      border-radius: 999px;
-      background: var(--bg);
-      font-size: 12px;
-      color: var(--muted);
-    }
-    .count { font-weight: 700; color: var(--text); }
 
-    ul { list-style: none; padding: 0; margin: 0; }
-    li.row {
-      background: var(--bg);
+    .card {
+      background: var(--card);
       border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 12px 14px;
-      margin: 10px 0;
-      box-shadow: var(--shadow);
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      align-items: center;
+      border-radius: 12px;
+      padding: 1.25rem;
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+      margin-bottom: 1rem;
     }
-    .left { display: flex; gap: 10px; align-items: baseline; min-width: 240px; }
-    .num {
+
+    h1 { margin-top: 0; margin-bottom: 0.4rem; }
+    p { color: var(--muted); line-height: 1.4; }
+
+    .rules {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.75rem;
+      margin-top: 0.75rem;
+    }
+
+    .rule-item {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.65rem;
+      background: #fbfdff;
+      font-size: 0.95rem;
+    }
+
+    form {
+      display: grid;
+      gap: 0.8rem;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.8rem;
+    }
+
+    label {
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 0.3rem;
+      display: inline-block;
+    }
+
+    input {
+      width: 100%;
+      padding: 0.65rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+
+    button {
+      width: fit-content;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 0.65rem 0.9rem;
       font-weight: 700;
-      background: var(--chip);
+      cursor: pointer;
+    }
+
+    button:hover { background: var(--accent-hover); }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+      font-size: 0.94rem;
+    }
+
+    th, td {
       border: 1px solid var(--border);
-      padding: 3px 8px;
-      border-radius: 999px;
-      font-size: 13px;
-    }
-    .name { font-size: 16px; font-weight: 600; }
-    .right { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
-
-    .field { display: grid; gap: 4px; }
-    .label { font-size: 11px; color: var(--muted); }
-    .field select { min-width: 170px; }
-
-    /* Status styles */
-    li.row.status-drafted_me .left .name,
-    li.row.status-drafted_other .left .name {
-      text-decoration: line-through;
-      opacity: 0.55;
-    }
-    li.row.status-drafted_me { border-color: #b6d7a8; }
-    li.row.status-drafted_other { border-color: #d9d2e9; }
-
-    /* Priority highlight */
-    li.row.priority-on { outline: 3px solid rgba(255, 209, 102, .45); }
-    li.row.priority-top { outline: 3px solid rgba(255, 153, 0, .45); }
-
-    .section {
-      background: rgba(255,255,255,.6);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 12px 14px;
+      text-align: left;
+      padding: 0.55rem;
     }
 
-    .section-head {
-      display:flex;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: 10px;
-      margin-bottom: 8px;
+    th {
+      background: #f1f5f9;
+      font-weight: 700;
     }
 
-    .muted { color: var(--muted); }
+    .empty {
+      color: var(--muted);
+      font-style: italic;
+      margin-top: 0.6rem;
+    }
+
+    .next-ok {
+      color: var(--ok);
+      font-weight: 700;
+    }
+
+    @media (max-width: 680px) {
+      .row { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
-
 <body>
-  <div class="wrap">
-    <h1>Little League Draft Board</h1>
-    <p>Available players are sorted by <b>Priority</b> (1 → 12). Your drafted players move into <b>My Picks</b>.</p>
-
-    <div class="toolbar">
-      <div class="group">
-        <input id="search" type="search" placeholder="Search player…" />
-        <span class="pill">Available: <span class="count" id="countAvail">0</span></span>
-        <span class="pill">My Picks: <span class="count" id="countMe">0</span></span>
-        <span class="pill">Other Team: <span class="count" id="countOther">0</span></span>
-      </div>
-
-      <div class="group">
-        <label class="muted" style="font-size:12px;">Show</label>
-        <select id="filterPriority">
-          <option value="any">Any priority</option>
-          <option value="set">Only prioritized</option>
-          <option value="top3">Top 3</option>
-          <option value="top5">Top 5</option>
-        </select>
-
-        <button id="reset" type="button">Reset all</button>
-      </div>
-    </div>
-
-    <div class="section">
-      <div class="section-head">
-        <h2 style="margin:0;">Available <span class="sub">(sorted by priority)</span></h2>
-        <div class="sub" id="availHint"></div>
-      </div>
-      <ul id="listAvailable">
-
-    <li class="row" data-num="1" data-name="Adrien Biscette" data-original="0">
-      <div class="left">
-        <span class="num">#1</span>
-        <span class="name">Adrien Biscette</span>
-      </div>
-      <div class="right">
-        <label class="field">
-          <span class="label">Priority</span>
-          <select class="priority">
-            <option value="">—</option>
-            <option value="1">1</option>
-<option value="2">2</option>
-<option value="3">3</option>
-<option value="4">4</option>
-<option value="5">5</option>
-<option value="6">6</option>
-<option value="7">7</option>
-<option value="8">8</option>
-<option value="9">9</option>
-<option value="10">10</option>
-<option value="11">11</option>
-<option value="12">12</option>
-          </select>
-        </label>
-
-        <label class="field">
-          <span class="label">Status</span>
-          <select class="status">
-            <option value="available" selected>Available</option>
-            <option value="drafted_me">Drafted (my team)</option>
-            <option value="drafted_other">Taken (other team)</option>
-          </select>
-        </label>
-      </div>
-    </li>
-    
-
-    <li class="row" data-num="2" data-name="Jak Deanne" data-original="1">
-      <div class="left">
-        <span class="num">#2</span>
-        <span class="name">Jak Deanne</span>
-      </div>
-      <div class="right">
-        <label class="field">
-          <span class="label">Priority</span>
-          <select class="priority">
-            <option value="">—</option>
-            <option value="1">1</option>
-<option value="2">2</option>
-<option value="3">3</option>
-<option value="4">4</option>
-<option value="5">5</option>
-<option value="6">6</option>
-<option value="7">7</option>
-<option value="8">8</option>
-<option value="9">9</option>
-<option value="10">10</option>
-<option value="11">11</option>
-<option value="12">12</option>
-          </select>
-        </label>
-
-        <label class="field">
-          <span class="label">Status</span>
-          <select class="status">
-            <option value="available" selected>Available</option>
-            <option value="drafted_me">Drafted (my team)</option>
-            <option value="drafted_other">Taken (other team)</option>
-          </select>
-        </label>
-      </div>
-    </li>
-    
-
-    <li class="row" data-num="3" data-name="Tristan Williams" data-original="2">
-      <div class="left">
-        <span class="num">#3</span>
-        <span class="name">Tristan Williams</span>
-      </div>
-      <div class="right">
-        <label class="field">
-          <span class="label">Priority</span>
-          <select class="priority">
-            <option value="">—</option>
-            <option value="1">1</option>
-<option value="2">2</option>
-<option value="3">3</option>
-<option value="4">4</option>
-<option value="5">5</option>
-<option value="6">6</option>
-<option value="7">7</option>
-<option value="8">8</option>
-<option value="9">9</option>
-<option value="10">10</option>
-<option value="11">11</option>
-<option value="12">12</option>
-          </select>
-        </label>
-
-        <label class="field">
-          <span class="label">Status</span>
-          <select class="status">
-            <option value="available" selected>Available</option>
-            <option value="drafted_me">Drafted (my team)</option>
-            <option value="drafted_other">Taken (other team)</option>
-          </select>
-        </label>
-      </div>
-    </li>
-    
-
-    <li class="row" data-num="4" data-name="Hasten Cunningham" data-original="3">
-      <div class="left">
-        <span class="num">#4</span>
-        <span class="name">Hasten Cunningham</span>
-      </div>
-      <div class="right">
-        <label class="field">
-          <span class="label">Priority</span>
-          <select class="priority">
-            <option value="">—</option>
-            <option value="1">1</option>
-<option value="2">2</option>
-<option value="3">3</option>
-<option value="4">4</option>
-<option value="5">5</option>
-<option value="6">6</option>
-<option value="7">7</option>
-<option value="8">8</option>
-<option value="9">9</option>
-<option value="10">10</option>
-<option value="11">11</option>
-<option value="12">12</option>
-          </select>
-        </label>
-
-        <label class="field">
-          <span class="label">Status</span>
-          <select class="status">
-            <option value="available" selected>Available</option>
-            <option value="drafted_me">Drafted (my team)</option>
-            <option value="drafted_other">Taken (other team)</option>
-          </select>
-        </label>
-      </div>
-    </li>
-    
-
-    <li class="row" data-num="5" data-name="Jackson Mazzarelli" data-original="4">
-      <div class="left">
-        <span class="num">#5</span>
-        <span class="name">Jackson Mazzarelli</span>
-      </div>
-      <div class="right">
-        <label class="field">
-          <span class="label">Priority</span>
-          <select class="priority">
-            <option value="">—</option>
-            <option value="1">1</option>
-<option value="2">2</option>
-<option value="3">3</option>
-<option value="4">4</option>
-<option value="5">5</option>
-<option value="6">6</option>
-<option value="7">7</option>
-<option value="8">8</option>
-<option value="9">9</option>
-<option value="10">10</option>
-<option value="11">11</option>
-<option value="12">12</option>
-          </select>
-        </label>
-
-        <label class="field">
-          <span class="label">Status</span>
-          <select class="status">
-            <option value="available" selected>Available</option>
-            <option value="drafted_me">Drafted (my team)</option>
-            <option value="drafted_other">Taken (other team)</option>
-          </select>
-        </label>
-      </div>
-    </li>
-    
-
-    <li class="row" data-num="6" data-name="Marshall Crippen" data-original="5">
-      <div class="left">
-        <span class="num">#6</span>
-        <span class="name">Marshall Crippen</span>
-      </div>
-      <div class="right">
-        <label class="field">
-          <span class="label">Priority</span>
-          <select class="priority">
-            <option value="">—</option>
-            <option value="1">1</option>
-<option value="2">2</option>
-<option value="3">3</option>
-<option value="4">4</option>
-<option value="5">5</option>
-<option value="6">6</option>
-<option value="7">7</option>
-<option value="8">8</option>
-<option value="9">9</option>
-<option value="10">10</option>
-<option value="11">11</option>
-<option value="12">12</option>
-          </select>
-        </label>
-
-        <label class="field">
-          <span class="label">Status</span>
-          <select class="status">
-            <option value="available" selected>Available</option>
-            <option value="drafted_me">Drafted (my team)</option>
-            <option value="drafted_other">Taken (other team)</option>
-          </select>
-        </label>
-      </div>
-    </li>
-    
-
-    <li class="row" data-num="7" data-name="Joshua Genz" data-original="6">
-      <div class="left">
-        <span class="num">#7</span>
-        <span class="name">Joshua Genz</span>
-      </div>
-      <div class="right">
-        <label class="field">
-          <span class="label">Priority</span>
-          <select class="priority">
-            <option value="">—</option>
-            <option value="1">1</option>
-<option value="2">2</option>
-<option value="3">3</option>
-<option value="4">4</option>
-<option value="5">5</option>
-<option value="6">6</option>
-<option value="7">7</option>
-<option value="8">8</option>
-<option value="9">9</option>
-<option value="10">10</option>
-<option value="11">11</option>
-<option value="12">12</option>
-          </select>
-        </label>
-
-        <label class="field">
-          <span class="label">Status</span>
-          <select class="status">
-            <option value="available" selected>Available</option>
-            <option value="drafted_me">Drafted (my team)</option>
-            <option value="drafted_other">Taken (other team)</option>
-          </select>
-        </label>
-      </div>
-    </li>
-    
-
-    <li class="row" data-num="8" data-name="River Bleker" data-original="7">
-      <div class="left">
-        <span class="num">#8</span>
-        <span class="name">River Bleker</span>
-      </div>
-      <div class="right">
-        <label class="field">
-          <span class="label">Priority</span>
-          <select class="priority">
-            <option value="">—</option>
-            <option value="1">1</option>
-<option value="2">2</option>
-<option value="3">3</option>
-<option value="4">4</option>
-<option value="5">5</option>
-<option value="6">6</option>
-<option value="7">7</option>
-<option value="8">8</option>
-<option value="9">9</option>
-<option value="10">10</option>
-<option value="11">11</option>
-<option value="12">12</option>
-          </select>
-        </label>
-
-        <label class="field">
-          <span class="label">Status</span>
-          <select class="status">
-            <option value="available" selected>Available</option>
-            <option value="drafted_me">Drafted (my team)</option>
-            <option value="drafted_other">Taken (other team)</option>
-          </select>
-        </label>
-      </div>
-    </li>
-    
-
-    <li class="row" data-num="9" data-name="Truitt Smith" data-original="8">
-      <div class="left">
-        <span class="num">#9</span>
-        <span class="name">Truitt Smith</span>
-      </div>
-      <div class="right">
-        <label class="field">
-          <span class="label">Priority</span>
-          <select class="priority">
-            <option value="">—</option>
-            <option value="1">1</option>
-<option value="2">2</option>
-<option value="3">3</option>
-<option value="4">4</option>
-<option value="5">5</option>
-<option value="6">6</option>
-<option value="7">7</option>
-<option value="8">8</option>
-<option value="9">9</option>
-<option value="10">10</option>
-<option value="11">11</option>
-<option value="12">12</option>
-          </select>
-        </label>
-
-        <label class="field">
-          <span class="label">Status</span>
-          <select class="status">
-            <option value="available" selected>Available</option>
-            <option value="drafted_me">Drafted (my team)</option>
-            <option value="drafted_other">Taken (other team)</option>
-          </select>
-        </label>
-      </div>
-    </li>
-    
-
-    <li class="row" data-num="10" data-name="Landen Duran" data-original="9">
-      <div class="left">
-        <span class="num">#10</span>
-        <span class="name">Landen Duran</span>
-      </div>
-      <div class="right">
-        <label class="field">
-          <span class="label">Priority</span>
-          <select class="priority">
-            <option value="">—</option>
-            <option value="1">1</option>
-<option value="2">2</option>
-<option value="3">3</option>
-<option value="4">4</option>
-<option value="5">5</option>
-<option value="6">6</option>
-<option value="7">7</option>
-<option value="8">8</option>
-<option value="9">9</option>
-<option value="10">10</option>
-<option value="11">11</option>
-<option value="12">12</option>
-          </select>
-        </label>
-
-        <label class="field">
-          <span class="label">Status</span>
-          <select class="status">
-            <option value="available" selected>Available</option>
-            <option value="drafted_me">Drafted (my team)</option>
-            <option value="drafted_other">Taken (other team)</option>
-          </select>
-        </label>
-      </div>
-    </li>
-    
-
-    <li class="row" data-num="11" data-name="Brenner Caraway" data-original="10">
-      <div class="left">
-        <span class="num">#11</span>
-        <span class="name">Brenner Caraway</span>
-      </div>
-      <div class="right">
-        <label class="field">
-          <span class="label">Priority</span>
-          <select class="priority">
-            <option value="">—</option>
-            <option value="1">1</option>
-<option value="2">2</option>
-<option value="3">3</option>
-<option value="4">4</option>
-<option value="5">5</option>
-<option value="6">6</option>
-<option value="7">7</option>
-<option value="8">8</option>
-<option value="9">9</option>
-<option value="10">10</option>
-<option value="11">11</option>
-<option value="12">12</option>
-          </select>
-        </label>
-
-        <label class="field">
-          <span class="label">Status</span>
-          <select class="status">
-            <option value="available" selected>Available</option>
-            <option value="drafted_me">Drafted (my team)</option>
-            <option value="drafted_other">Taken (other team)</option>
-          </select>
-        </label>
-      </div>
-    </li>
-    
-
-    <li class="row" data-num="12" data-name="Isaac Carlson" data-original="11">
-      <div class="left">
-        <span class="num">#12</span>
-        <span class="name">Isaac Carlson</span>
-      </div>
-      <div class="right">
-        <label class="field">
-          <span class="label">Priority</span>
-          <select class="priority">
-            <option value="">—</option>
-            <option value="1">1</option>
-<option value="2">2</option>
-<option value="3">3</option>
-<option value="4">4</option>
-<option value="5">5</option>
-<option value="6">6</option>
-<option value="7">7</option>
-<option value="8">8</option>
-<option value="9">9</option>
-<option value="10">10</option>
-<option value="11">11</option>
-<option value="12">12</option>
-          </select>
-        </label>
-
-        <label class="field">
-          <span class="label">Status</span>
-          <select class="status">
-            <option value="available" selected>Available</option>
-            <option value="drafted_me">Drafted (my team)</option>
-            <option value="drafted_other">Taken (other team)</option>
-          </select>
-        </label>
-      </div>
-    </li>
-    
-
-    <li class="row" data-num="13" data-name="Elijah Jacobs" data-original="12">
-      <div class="left">
-        <span class="num">#13</span>
-        <span class="name">Elijah Jacobs</span>
-      </div>
-      <div class="right">
-        <label class="field">
-          <span class="label">Priority</span>
-          <select class="priority">
-            <option value="">—</option>
-            <option value="1">1</option>
-<option value="2">2</option>
-<option value="3">3</option>
-<option value="4">4</option>
-<option value="5">5</option>
-<option value="6">6</option>
-<option value="7">7</option>
-<option value="8">8</option>
-<option value="9">9</option>
-<option value="10">10</option>
-<option value="11">11</option>
-<option value="12">12</option>
-          </select>
-        </label>
-
-        <label class="field">
-          <span class="label">Status</span>
-          <select class="status">
-            <option value="available" selected>Available</option>
-            <option value="drafted_me">Drafted (my team)</option>
-            <option value="drafted_other">Taken (other team)</option>
-          </select>
-        </label>
-      </div>
-    </li>
-    
-
-    <li class="row" data-num="14" data-name="Garrett Kinney" data-original="13">
-      <div class="left">
-        <span class="num">#14</span>
-        <span class="name">Garrett Kinney</span>
-      </div>
-      <div class="right">
-        <label class="field">
-          <span class="label">Priority</span>
-          <select class="priority">
-            <option value="">—</option>
-            <option value="1">1</option>
-<option value="2">2</option>
-<option value="3">3</option>
-<option value="4">4</option>
-<option value="5">5</option>
-<option value="6">6</option>
-<option value="7">7</option>
-<option value="8">8</option>
-<option value="9">9</option>
-<option value="10">10</option>
-<option value="11">11</option>
-<option value="12">12</option>
-          </select>
-        </label>
-
-        <label class="field">
-          <span class="label">Status</span>
-          <select class="status">
-            <option value="available" selected>Available</option>
-            <option value="drafted_me">Drafted (my team)</option>
-            <option value="drafted_other">Taken (other team)</option>
-          </select>
-        </label>
-      </div>
-    </li>
-    
-
-    <li class="row" data-num="15" data-name="Damien Bailey" data-original="14">
-      <div class="left">
-        <span class="num">#15</span>
-        <span class="name">Damien Bailey</span>
-      </div>
-      <div class="right">
-        <label class="field">
-          <span class="label">Priority</span>
-          <select class="priority">
-            <option value="">—</option>
-            <option value="1">1</option>
-<option value="2">2</option>
-<option value="3">3</option>
-<option value="4">4</option>
-<option value="5">5</option>
-<option value="6">6</option>
-<option value="7">7</option>
-<option value="8">8</option>
-<option value="9">9</option>
-<option value="10">10</option>
-<option value="11">11</option>
-<option value="12">12</option>
-          </select>
-        </label>
-
-        <label class="field">
-          <span class="label">Status</span>
-          <select class="status">
-            <option value="available" selected>Available</option>
-            <option value="drafted_me">Drafted (my team)</option>
-            <option value="drafted_other">Taken (other team)</option>
-          </select>
-        </label>
-      </div>
-    </li>
-    
-
-    <li class="row" data-num="16" data-name="Hunter Roy" data-original="15">
-      <div class="left">
-        <span class="num">#16</span>
-        <span class="name">Hunter Roy</span>
-      </div>
-      <div class="right">
-        <label class="field">
-          <span class="label">Priority</span>
-          <select class="priority">
-            <option value="">—</option>
-            <option value="1">1</option>
-<option value="2">2</option>
-<option value="3">3</option>
-<option value="4">4</option>
-<option value="5">5</option>
-<option value="6">6</option>
-<option value="7">7</option>
-<option value="8">8</option>
-<option value="9">9</option>
-<option value="10">10</option>
-<option value="11">11</option>
-<option value="12">12</option>
-          </select>
-        </label>
-
-        <label class="field">
-          <span class="label">Status</span>
-          <select class="status">
-            <option value="available" selected>Available</option>
-            <option value="drafted_me">Drafted (my team)</option>
-            <option value="drafted_other">Taken (other team)</option>
-          </select>
-        </label>
-      </div>
-    </li>
-    
-
-    <li class="row" data-num="17" data-name="Hudson Schultz" data-original="16">
-      <div class="left">
-        <span class="num">#17</span>
-        <span class="name">Hudson Schultz</span>
-      </div>
-      <div class="right">
-        <label class="field">
-          <span class="label">Priority</span>
-          <select class="priority">
-            <option value="">—</option>
-            <option value="1">1</option>
-<option value="2">2</option>
-<option value="3">3</option>
-<option value="4">4</option>
-<option value="5">5</option>
-<option value="6">6</option>
-<option value="7">7</option>
-<option value="8">8</option>
-<option value="9">9</option>
-<option value="10">10</option>
-<option value="11">11</option>
-<option value="12">12</option>
-          </select>
-        </label>
-
-        <label class="field">
-          <span class="label">Status</span>
-          <select class="status">
-            <option value="available" selected>Available</option>
-            <option value="drafted_me">Drafted (my team)</option>
-            <option value="drafted_other">Taken (other team)</option>
-          </select>
-        </label>
-      </div>
-    </li>
-    
-
-    <li class="row" data-num="18" data-name="Knox Natale" data-original="17">
-      <div class="left">
-        <span class="num">#18</span>
-        <span class="name">Knox Natale</span>
-      </div>
-      <div class="right">
-        <label class="field">
-          <span class="label">Priority</span>
-          <select class="priority">
-            <option value="">—</option>
-            <option value="1">1</option>
-<option value="2">2</option>
-<option value="3">3</option>
-<option value="4">4</option>
-<option value="5">5</option>
-<option value="6">6</option>
-<option value="7">7</option>
-<option value="8">8</option>
-<option value="9">9</option>
-<option value="10">10</option>
-<option value="11">11</option>
-<option value="12">12</option>
-          </select>
-        </label>
-
-        <label class="field">
-          <span class="label">Status</span>
-          <select class="status">
-            <option value="available" selected>Available</option>
-            <option value="drafted_me">Drafted (my team)</option>
-            <option value="drafted_other">Taken (other team)</option>
-          </select>
-        </label>
-      </div>
-    </li>
-    
-
-    <li class="row" data-num="19" data-name="Evan Ellison" data-original="18">
-      <div class="left">
-        <span class="num">#19</span>
-        <span class="name">Evan Ellison</span>
-      </div>
-      <div class="right">
-        <label class="field">
-          <span class="label">Priority</span>
-          <select class="priority">
-            <option value="">—</option>
-            <option value="1">1</option>
-<option value="2">2</option>
-<option value="3">3</option>
-<option value="4">4</option>
-<option value="5">5</option>
-<option value="6">6</option>
-<option value="7">7</option>
-<option value="8">8</option>
-<option value="9">9</option>
-<option value="10">10</option>
-<option value="11">11</option>
-<option value="12">12</option>
-          </select>
-        </label>
-
-        <label class="field">
-          <span class="label">Status</span>
-          <select class="status">
-            <option value="available" selected>Available</option>
-            <option value="drafted_me">Drafted (my team)</option>
-            <option value="drafted_other">Taken (other team)</option>
-          </select>
-        </label>
-      </div>
-    </li>
-    
-
-    <li class="row" data-num="20" data-name="Carson Iler" data-original="19">
-      <div class="left">
-        <span class="num">#20</span>
-        <span class="name">Carson Iler</span>
-      </div>
-      <div class="right">
-        <label class="field">
-          <span class="label">Priority</span>
-          <select class="priority">
-            <option value="">—</option>
-            <option value="1">1</option>
-<option value="2">2</option>
-<option value="3">3</option>
-<option value="4">4</option>
-<option value="5">5</option>
-<option value="6">6</option>
-<option value="7">7</option>
-<option value="8">8</option>
-<option value="9">9</option>
-<option value="10">10</option>
-<option value="11">11</option>
-<option value="12">12</option>
-          </select>
-        </label>
-
-        <label class="field">
-          <span class="label">Status</span>
-          <select class="status">
-            <option value="available" selected>Available</option>
-            <option value="drafted_me">Drafted (my team)</option>
-            <option value="drafted_other">Taken (other team)</option>
-          </select>
-        </label>
-      </div>
-    </li>
-    
-
-    <li class="row" data-num="21" data-name="Logan Mayle" data-original="20">
-      <div class="left">
-        <span class="num">#21</span>
-        <span class="name">Logan Mayle</span>
-      </div>
-      <div class="right">
-        <label class="field">
-          <span class="label">Priority</span>
-          <select class="priority">
-            <option value="">—</option>
-            <option value="1">1</option>
-<option value="2">2</option>
-<option value="3">3</option>
-<option value="4">4</option>
-<option value="5">5</option>
-<option value="6">6</option>
-<option value="7">7</option>
-<option value="8">8</option>
-<option value="9">9</option>
-<option value="10">10</option>
-<option value="11">11</option>
-<option value="12">12</option>
-          </select>
-        </label>
-
-        <label class="field">
-          <span class="label">Status</span>
-          <select class="status">
-            <option value="available" selected>Available</option>
-            <option value="drafted_me">Drafted (my team)</option>
-            <option value="drafted_other">Taken (other team)</option>
-          </select>
-        </label>
-      </div>
-    </li>
-    
-
-    <li class="row" data-num="22" data-name="Reid Epperly" data-original="21">
-      <div class="left">
-        <span class="num">#22</span>
-        <span class="name">Reid Epperly</span>
-      </div>
-      <div class="right">
-        <label class="field">
-          <span class="label">Priority</span>
-          <select class="priority">
-            <option value="">—</option>
-            <option value="1">1</option>
-<option value="2">2</option>
-<option value="3">3</option>
-<option value="4">4</option>
-<option value="5">5</option>
-<option value="6">6</option>
-<option value="7">7</option>
-<option value="8">8</option>
-<option value="9">9</option>
-<option value="10">10</option>
-<option value="11">11</option>
-<option value="12">12</option>
-          </select>
-        </label>
-
-        <label class="field">
-          <span class="label">Status</span>
-          <select class="status">
-            <option value="available" selected>Available</option>
-            <option value="drafted_me">Drafted (my team)</option>
-            <option value="drafted_other">Taken (other team)</option>
-          </select>
-        </label>
-      </div>
-    </li>
-    
-
-    <li class="row" data-num="23" data-name="Andrew Severin" data-original="22">
-      <div class="left">
-        <span class="num">#23</span>
-        <span class="name">Andrew Severin</span>
-      </div>
-      <div class="right">
-        <label class="field">
-          <span class="label">Priority</span>
-          <select class="priority">
-            <option value="">—</option>
-            <option value="1">1</option>
-<option value="2">2</option>
-<option value="3">3</option>
-<option value="4">4</option>
-<option value="5">5</option>
-<option value="6">6</option>
-<option value="7">7</option>
-<option value="8">8</option>
-<option value="9">9</option>
-<option value="10">10</option>
-<option value="11">11</option>
-<option value="12">12</option>
-          </select>
-        </label>
-
-        <label class="field">
-          <span class="label">Status</span>
-          <select class="status">
-            <option value="available" selected>Available</option>
-            <option value="drafted_me">Drafted (my team)</option>
-            <option value="drafted_other">Taken (other team)</option>
-          </select>
-        </label>
-      </div>
-    </li>
-    
-
-    <li class="row" data-num="24" data-name="Theodore Nieuwenhuis" data-original="23">
-      <div class="left">
-        <span class="num">#24</span>
-        <span class="name">Theodore Nieuwenhuis</span>
-      </div>
-      <div class="right">
-        <label class="field">
-          <span class="label">Priority</span>
-          <select class="priority">
-            <option value="">—</option>
-            <option value="1">1</option>
-<option value="2">2</option>
-<option value="3">3</option>
-<option value="4">4</option>
-<option value="5">5</option>
-<option value="6">6</option>
-<option value="7">7</option>
-<option value="8">8</option>
-<option value="9">9</option>
-<option value="10">10</option>
-<option value="11">11</option>
-<option value="12">12</option>
-          </select>
-        </label>
-
-        <label class="field">
-          <span class="label">Status</span>
-          <select class="status">
-            <option value="available" selected>Available</option>
-            <option value="drafted_me">Drafted (my team)</option>
-            <option value="drafted_other">Taken (other team)</option>
-          </select>
-        </label>
-      </div>
-    </li>
-    
-
-    <li class="row" data-num="25" data-name="Noah Borders" data-original="24">
-      <div class="left">
-        <span class="num">#25</span>
-        <span class="name">Noah Borders</span>
-      </div>
-      <div class="right">
-        <label class="field">
-          <span class="label">Priority</span>
-          <select class="priority">
-            <option value="">—</option>
-            <option value="1">1</option>
-<option value="2">2</option>
-<option value="3">3</option>
-<option value="4">4</option>
-<option value="5">5</option>
-<option value="6">6</option>
-<option value="7">7</option>
-<option value="8">8</option>
-<option value="9">9</option>
-<option value="10">10</option>
-<option value="11">11</option>
-<option value="12">12</option>
-          </select>
-        </label>
-
-        <label class="field">
-          <span class="label">Status</span>
-          <select class="status">
-            <option value="available" selected>Available</option>
-            <option value="drafted_me">Drafted (my team)</option>
-            <option value="drafted_other">Taken (other team)</option>
-          </select>
-        </label>
-      </div>
-    </li>
-    
-
-    <li class="row" data-num="26" data-name="Anthony Preciado" data-original="25">
-      <div class="left">
-        <span class="num">#26</span>
-        <span class="name">Anthony Preciado</span>
-      </div>
-      <div class="right">
-        <label class="field">
-          <span class="label">Priority</span>
-          <select class="priority">
-            <option value="">—</option>
-            <option value="1">1</option>
-<option value="2">2</option>
-<option value="3">3</option>
-<option value="4">4</option>
-<option value="5">5</option>
-<option value="6">6</option>
-<option value="7">7</option>
-<option value="8">8</option>
-<option value="9">9</option>
-<option value="10">10</option>
-<option value="11">11</option>
-<option value="12">12</option>
-          </select>
-        </label>
-
-        <label class="field">
-          <span class="label">Status</span>
-          <select class="status">
-            <option value="available" selected>Available</option>
-            <option value="drafted_me">Drafted (my team)</option>
-            <option value="drafted_other">Taken (other team)</option>
-          </select>
-        </label>
-      </div>
-    </li>
-    
-
-    <li class="row" data-num="27" data-name="Tyler Blackburn" data-original="26">
-      <div class="left">
-        <span class="num">#27</span>
-        <span class="name">Tyler Blackburn</span>
-      </div>
-      <div class="right">
-        <label class="field">
-          <span class="label">Priority</span>
-          <select class="priority">
-            <option value="">—</option>
-            <option value="1">1</option>
-<option value="2">2</option>
-<option value="3">3</option>
-<option value="4">4</option>
-<option value="5">5</option>
-<option value="6">6</option>
-<option value="7">7</option>
-<option value="8">8</option>
-<option value="9">9</option>
-<option value="10">10</option>
-<option value="11">11</option>
-<option value="12">12</option>
-          </select>
-        </label>
-
-        <label class="field">
-          <span class="label">Status</span>
-          <select class="status">
-            <option value="available" selected>Available</option>
-            <option value="drafted_me">Drafted (my team)</option>
-            <option value="drafted_other">Taken (other team)</option>
-          </select>
-        </label>
-      </div>
-    </li>
-    
-
-    <li class="row" data-num="28" data-name="Zaerik Holland" data-original="27">
-      <div class="left">
-        <span class="num">#28</span>
-        <span class="name">Zaerik Holland</span>
-      </div>
-      <div class="right">
-        <label class="field">
-          <span class="label">Priority</span>
-          <select class="priority">
-            <option value="">—</option>
-            <option value="1">1</option>
-<option value="2">2</option>
-<option value="3">3</option>
-<option value="4">4</option>
-<option value="5">5</option>
-<option value="6">6</option>
-<option value="7">7</option>
-<option value="8">8</option>
-<option value="9">9</option>
-<option value="10">10</option>
-<option value="11">11</option>
-<option value="12">12</option>
-          </select>
-        </label>
-
-        <label class="field">
-          <span class="label">Status</span>
-          <select class="status">
-            <option value="available" selected>Available</option>
-            <option value="drafted_me">Drafted (my team)</option>
-            <option value="drafted_other">Taken (other team)</option>
-          </select>
-        </label>
-      </div>
-    </li>
-    
-
-    <li class="row" data-num="29" data-name="James Jacobs" data-original="28">
-      <div class="left">
-        <span class="num">#29</span>
-        <span class="name">James Jacobs</span>
-      </div>
-      <div class="right">
-        <label class="field">
-          <span class="label">Priority</span>
-          <select class="priority">
-            <option value="">—</option>
-            <option value="1">1</option>
-<option value="2">2</option>
-<option value="3">3</option>
-<option value="4">4</option>
-<option value="5">5</option>
-<option value="6">6</option>
-<option value="7">7</option>
-<option value="8">8</option>
-<option value="9">9</option>
-<option value="10">10</option>
-<option value="11">11</option>
-<option value="12">12</option>
-          </select>
-        </label>
-
-        <label class="field">
-          <span class="label">Status</span>
-          <select class="status">
-            <option value="available" selected>Available</option>
-            <option value="drafted_me">Drafted (my team)</option>
-            <option value="drafted_other">Taken (other team)</option>
-          </select>
-        </label>
-      </div>
-    </li>
-    
-
-    <li class="row" data-num="30" data-name="Brennan Heath" data-original="29">
-      <div class="left">
-        <span class="num">#30</span>
-        <span class="name">Brennan Heath</span>
-      </div>
-      <div class="right">
-        <label class="field">
-          <span class="label">Priority</span>
-          <select class="priority">
-            <option value="">—</option>
-            <option value="1">1</option>
-<option value="2">2</option>
-<option value="3">3</option>
-<option value="4">4</option>
-<option value="5">5</option>
-<option value="6">6</option>
-<option value="7">7</option>
-<option value="8">8</option>
-<option value="9">9</option>
-<option value="10">10</option>
-<option value="11">11</option>
-<option value="12">12</option>
-          </select>
-        </label>
-
-        <label class="field">
-          <span class="label">Status</span>
-          <select class="status">
-            <option value="available" selected>Available</option>
-            <option value="drafted_me">Drafted (my team)</option>
-            <option value="drafted_other">Taken (other team)</option>
-          </select>
-        </label>
-      </div>
-    </li>
-    
-
-    <li class="row" data-num="31" data-name="Brenton Smith" data-original="30">
-      <div class="left">
-        <span class="num">#31</span>
-        <span class="name">Brenton Smith</span>
-      </div>
-      <div class="right">
-        <label class="field">
-          <span class="label">Priority</span>
-          <select class="priority">
-            <option value="">—</option>
-            <option value="1">1</option>
-<option value="2">2</option>
-<option value="3">3</option>
-<option value="4">4</option>
-<option value="5">5</option>
-<option value="6">6</option>
-<option value="7">7</option>
-<option value="8">8</option>
-<option value="9">9</option>
-<option value="10">10</option>
-<option value="11">11</option>
-<option value="12">12</option>
-          </select>
-        </label>
-
-        <label class="field">
-          <span class="label">Status</span>
-          <select class="status">
-            <option value="available" selected>Available</option>
-            <option value="drafted_me">Drafted (my team)</option>
-            <option value="drafted_other">Taken (other team)</option>
-          </select>
-        </label>
-      </div>
-    </li>
-    
-
-    <li class="row" data-num="32" data-name="Kade Fluegel" data-original="31">
-      <div class="left">
-        <span class="num">#32</span>
-        <span class="name">Kade Fluegel</span>
-      </div>
-      <div class="right">
-        <label class="field">
-          <span class="label">Priority</span>
-          <select class="priority">
-            <option value="">—</option>
-            <option value="1">1</option>
-<option value="2">2</option>
-<option value="3">3</option>
-<option value="4">4</option>
-<option value="5">5</option>
-<option value="6">6</option>
-<option value="7">7</option>
-<option value="8">8</option>
-<option value="9">9</option>
-<option value="10">10</option>
-<option value="11">11</option>
-<option value="12">12</option>
-          </select>
-        </label>
-
-        <label class="field">
-          <span class="label">Status</span>
-          <select class="status">
-            <option value="available" selected>Available</option>
-            <option value="drafted_me">Drafted (my team)</option>
-            <option value="drafted_other">Taken (other team)</option>
-          </select>
-        </label>
-      </div>
-    </li>
-    
-
-    <li class="row" data-num="33" data-name="Scott Ellison III" data-original="32">
-      <div class="left">
-        <span class="num">#33</span>
-        <span class="name">Scott Ellison III</span>
-      </div>
-      <div class="right">
-        <label class="field">
-          <span class="label">Priority</span>
-          <select class="priority">
-            <option value="">—</option>
-            <option value="1">1</option>
-<option value="2">2</option>
-<option value="3">3</option>
-<option value="4">4</option>
-<option value="5">5</option>
-<option value="6">6</option>
-<option value="7">7</option>
-<option value="8">8</option>
-<option value="9">9</option>
-<option value="10">10</option>
-<option value="11">11</option>
-<option value="12">12</option>
-          </select>
-        </label>
-
-        <label class="field">
-          <span class="label">Status</span>
-          <select class="status">
-            <option value="available" selected>Available</option>
-            <option value="drafted_me">Drafted (my team)</option>
-            <option value="drafted_other">Taken (other team)</option>
-          </select>
-        </label>
-      </div>
-    </li>
-    
-
-    <li class="row" data-num="34" data-name="Mason Wristen" data-original="33">
-      <div class="left">
-        <span class="num">#34</span>
-        <span class="name">Mason Wristen</span>
-      </div>
-      <div class="right">
-        <label class="field">
-          <span class="label">Priority</span>
-          <select class="priority">
-            <option value="">—</option>
-            <option value="1">1</option>
-<option value="2">2</option>
-<option value="3">3</option>
-<option value="4">4</option>
-<option value="5">5</option>
-<option value="6">6</option>
-<option value="7">7</option>
-<option value="8">8</option>
-<option value="9">9</option>
-<option value="10">10</option>
-<option value="11">11</option>
-<option value="12">12</option>
-          </select>
-        </label>
-
-        <label class="field">
-          <span class="label">Status</span>
-          <select class="status">
-            <option value="available" selected>Available</option>
-            <option value="drafted_me">Drafted (my team)</option>
-            <option value="drafted_other">Taken (other team)</option>
-          </select>
-        </label>
-      </div>
-    </li>
-    
-      </ul>
-    </div>
-
-    <div class="section" style="margin-top:14px;">
-      <div class="section-head">
-        <h2 style="margin:0;">My Picks</h2>
-        <div class="sub">Most recent pick at top</div>
-      </div>
-      <ul id="listMe"></ul>
-    </div>
-
-    <div class="section" style="margin-top:14px;">
-      <div class="section-head">
-        <h2 style="margin:0;">Taken by Other Team</h2>
-        <div class="sub">Most recent at top</div>
-      </div>
-      <ul id="listOther"></ul>
-    </div>
-  </div>
+  <main class="page">
+    <section class="card">
+      <h1>High Plains Little League Pitch Tracker</h1>
+      <p>
+        Track game date, pitcher name, and pitches thrown for 14U players.
+        The app calculates required rest and the earliest next eligible pitching date.
+      </p>
+      <div class="rules">
+        <div class="rule-item"><strong>66+ pitches</strong><br>4 days rest</div>
+        <div class="rule-item"><strong>51-65 pitches</strong><br>3 days rest</div>
+        <div class="rule-item"><strong>36-50 pitches</strong><br>2 days rest</div>
+        <div class="rule-item"><strong>21-35 pitches</strong><br>1 day rest</div>
+        <div class="rule-item"><strong>1-20 pitches</strong><br>0 days rest</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <form id="pitch-form">
+        <div>
+          <label for="team-name">Team Name</label>
+          <input id="team-name" name="teamName" type="text" placeholder="e.g. HPLL Tigers" required>
+        </div>
+        <div class="row">
+          <div>
+            <label for="game-date">Game Date</label>
+            <input id="game-date" name="gameDate" type="date" required>
+          </div>
+          <div>
+            <label for="pitcher-name">Pitcher Name</label>
+            <input id="pitcher-name" name="pitcherName" type="text" placeholder="e.g. Jamie Smith" required>
+          </div>
+        </div>
+        <div>
+          <label for="pitches-thrown">Pitches Thrown</label>
+          <input id="pitches-thrown" name="pitchesThrown" type="number" min="1" step="1" placeholder="e.g. 42" required>
+        </div>
+        <button type="submit">Add Game Entry</button>
+      </form>
+      <p class="empty" id="empty-state">No entries yet.</p>
+      <table id="results-table" hidden>
+        <thead>
+          <tr>
+            <th>Team</th>
+            <th>Game Date</th>
+            <th>Pitcher</th>
+            <th>Pitches</th>
+            <th>Required Rest</th>
+            <th>Next Eligible Date</th>
+          </tr>
+        </thead>
+        <tbody id="results-body"></tbody>
+      </table>
+    </section>
+  </main>
 
   <script>
-    const STORAGE_KEY = "ll_draft_board_v4";
-    const listAvailable = document.getElementById("listAvailable");
-    const listMe = document.getElementById("listMe");
-    const listOther = document.getElementById("listOther");
+    const form = document.getElementById("pitch-form");
+    const resultsTable = document.getElementById("results-table");
+    const resultsBody = document.getElementById("results-body");
+    const emptyState = document.getElementById("empty-state");
+    const STORAGE_KEY = "hpllPitchEntries";
 
-    const search = document.getElementById("search");
-    const filterPriority = document.getElementById("filterPriority");
-
-    const countAvail = document.getElementById("countAvail");
-    const countMe = document.getElementById("countMe");
-    const countOther = document.getElementById("countOther");
-    const availHint = document.getElementById("availHint");
-
-    function getState() {
-      try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); }
-      catch { return {}; }
+    function getRestDays(pitchesThrown) {
+      if (pitchesThrown >= 66) return 4;
+      if (pitchesThrown >= 51) return 3;
+      if (pitchesThrown >= 36) return 2;
+      if (pitchesThrown >= 21) return 1;
+      return 0;
     }
 
-    function setState(state) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    function addDays(dateInput, daysToAdd) {
+      const date = new Date(dateInput + "T00:00:00");
+      date.setDate(date.getDate() + daysToAdd + 1);
+      return date;
     }
 
-    function applyRowStyles(li, status, priority) {
-      li.classList.remove("status-available","status-drafted_me","status-drafted_other","priority-on","priority-top");
-      li.classList.add("status-" + status);
-
-      const p = Number(priority || 0);
-      if (p > 0) {
-        li.classList.add("priority-on");
-        if (p <= 3) li.classList.add("priority-top");
-      }
+    function formatDate(dateInput) {
+      const date = new Date(dateInput + "T00:00:00");
+      return date.toLocaleDateString();
     }
 
-    function persistRow(li) {
-      const state = getState();
-      const num = li.dataset.num;
-      const status = li.querySelector("select.status").value;
-      const priority = li.querySelector("select.priority").value;
-
-      const prev = state[num] || {};
-      const now = Date.now();
-
-      let pickedAt = prev.pickedAt || null;
-      let otherAt = prev.otherAt || null;
-
-      if (status === "drafted_me" && prev.status !== "drafted_me") pickedAt = now;
-      if (status !== "drafted_me") pickedAt = null;
-
-      if (status === "drafted_other" && prev.status !== "drafted_other") otherAt = now;
-      if (status !== "drafted_other") otherAt = null;
-
-      state[num] = {
-        name: li.dataset.name,
-        status,
-        priority,
-        pickedAt,
-        otherAt,
-        original: Number(li.dataset.original)
-      };
-
-      setState(state);
+    function formatDateFromDateObject(date) {
+      return date.toLocaleDateString();
     }
 
-    function rowKey(li) { return li.dataset.num; }
-
-    function priorityValue(li) {
-      const v = li.querySelector("select.priority").value;
-      if (!v) return 999;
-      const n = Number(v);
-      return Number.isFinite(n) ? n : 999;
-    }
-
-    function matchesFilters(li) {
-      const q = (search.value || "").trim().toLowerCase();
-      const pFilter = filterPriority.value;
-
-      const name = li.dataset.name.toLowerCase();
-      const num = li.dataset.num;
-
-      if (q && !(name.includes(q) || ("#" + num).includes(q))) return false;
-
-      const p = Number(li.querySelector("select.priority").value || 0);
-      if (pFilter === "set" && !(p > 0)) return false;
-      if (pFilter === "top3" && !(p > 0 && p <= 3)) return false;
-      if (pFilter === "top5" && !(p > 0 && p <= 5)) return false;
-
-      return true;
-    }
-
-    function placeRow(li) {
-      const status = li.querySelector("select.status").value;
-      if (status === "drafted_me") listMe.appendChild(li);
-      else if (status === "drafted_other") listOther.appendChild(li);
-      else listAvailable.appendChild(li);
-    }
-
-    function sortAndRender() {
-      const state = getState();
-
-      const allRows = [
-        ...listAvailable.querySelectorAll("li.row"),
-        ...listMe.querySelectorAll("li.row"),
-        ...listOther.querySelectorAll("li.row")
-      ];
-
-      allRows.forEach(li => {
-        li.style.display = matchesFilters(li) ? "" : "none";
-      });
-
-      allRows.forEach(li => placeRow(li));
-
-      const availRows = [...listAvailable.querySelectorAll("li.row")];
-      availRows.sort((a,b)=>{
-        const pa = priorityValue(a);
-        const pb = priorityValue(b);
-        if (pa !== pb) return pa - pb;
-        return Number(a.dataset.original) - Number(b.dataset.original);
-      });
-      availRows.forEach(r=>listAvailable.appendChild(r));
-
-      const meRows = [...listMe.querySelectorAll("li.row")];
-      meRows.sort((a,b)=>{
-        const sa = state[rowKey(a)] || {};
-        const sb = state[rowKey(b)] || {};
-        const ta = sa.pickedAt || 0;
-        const tb = sb.pickedAt || 0;
-        if (ta !== tb) return tb - ta;
-        return Number(a.dataset.original) - Number(b.dataset.original);
-      });
-      meRows.forEach(r=>listMe.appendChild(r));
-
-      const otherRows = [...listOther.querySelectorAll("li.row")];
-      otherRows.sort((a,b)=>{
-        const sa = state[rowKey(a)] || {};
-        const sb = state[rowKey(b)] || {};
-        const ta = sa.otherAt || 0;
-        const tb = sb.otherAt || 0;
-        if (ta !== tb) return tb - ta;
-        return Number(a.dataset.original) - Number(b.dataset.original);
-      });
-      otherRows.forEach(r=>listOther.appendChild(r));
-
-      updateCounts();
-      updateAvailHint();
-    }
-
-    function updateCounts() {
-      const all = [
-        ...listAvailable.querySelectorAll("li.row"),
-        ...listMe.querySelectorAll("li.row"),
-        ...listOther.querySelectorAll("li.row")
-      ];
-
-      let avail=0, me=0, other=0;
-      all.forEach(li => {
-        const status = li.querySelector("select.status").value;
-        if (status === "available") avail++;
-        else if (status === "drafted_me") me++;
-        else other++;
-      });
-
-      countAvail.textContent = avail;
-      countMe.textContent = me;
-      countOther.textContent = other;
-    }
-
-    function updateAvailHint() {
-      const shown = [...listAvailable.querySelectorAll("li.row")].filter(li => li.style.display !== "none").length;
-      const total = listAvailable.querySelectorAll("li.row").length;
-      if (search.value.trim() || filterPriority.value !== "any") {
-        availHint.textContent = `Showing ${shown} of ${total}`;
-      } else {
-        availHint.textContent = "";
-      }
-    }
-
-    function hydrateFromStorage() {
-      // migrate v3 if present and v4 missing
+    function getSavedEntries() {
       try {
-        const old = JSON.parse(localStorage.getItem("ll_draft_board_v3") || "null");
-        if (old && typeof old === "object" && !localStorage.getItem(STORAGE_KEY)) {
-          const migrated = {};
-          Object.keys(old).forEach(k => {
-            migrated[k] = { status: old[k].status || "available", priority: old[k].priority || "" };
-          });
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
-        }
-      } catch(e) { /* ignore */ }
-
-      const current = getState();
-
-      const allRows = [
-        ...listAvailable.querySelectorAll("li.row"),
-        ...listMe.querySelectorAll("li.row"),
-        ...listOther.querySelectorAll("li.row")
-      ];
-
-      allRows.forEach(li => {
-        const num = li.dataset.num;
-        const row = current[num] || {};
-
-        if (row.status) li.querySelector("select.status").value = row.status;
-        if (row.priority !== undefined && row.priority !== null && row.priority !== "") li.querySelector("select.priority").value = String(row.priority);
-
-        applyRowStyles(li, li.querySelector("select.status").value, li.querySelector("select.priority").value);
-      });
-
-      // write back for bookkeeping + timestamps if needed
-      allRows.forEach(li => persistRow(li));
-
-      sortAndRender();
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (error) {
+        return [];
+      }
     }
 
-    document.addEventListener("change", (e) => {
-      const li = e.target.closest("li.row");
-      if (!li) return;
-      applyRowStyles(li, li.querySelector("select.status").value, li.querySelector("select.priority").value);
-      persistRow(li);
-      sortAndRender();
-    });
+    function saveEntries(entries) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+    }
 
-    search.addEventListener("input", sortAndRender);
-    filterPriority.addEventListener("change", sortAndRender);
+    function createRow(entry) {
+      const restDays = getRestDays(entry.pitchesThrown);
+      const nextEligibleDate = addDays(entry.gameDate, restDays);
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${entry.teamName}</td>
+        <td>${formatDate(entry.gameDate)}</td>
+        <td>${entry.pitcherName}</td>
+        <td>${entry.pitchesThrown}</td>
+        <td>${restDays} day${restDays === 1 ? "" : "s"}</td>
+        <td class="next-ok">${formatDateFromDateObject(nextEligibleDate)}</td>
+      `;
+      return row;
+    }
 
-    document.getElementById("reset").addEventListener("click", () => {
-      if (!confirm("Reset all players to Available and clear priorities?")) return;
-      localStorage.removeItem(STORAGE_KEY);
+    function renderEntries(entries) {
+      resultsBody.innerHTML = "";
+      for (const entry of entries) {
+        resultsBody.appendChild(createRow(entry));
+      }
+      const hasEntries = entries.length > 0;
+      emptyState.hidden = hasEntries;
+      resultsTable.hidden = !hasEntries;
+    }
 
-      const allRows = [
-        ...listAvailable.querySelectorAll("li.row"),
-        ...listMe.querySelectorAll("li.row"),
-        ...listOther.querySelectorAll("li.row")
-      ];
-      allRows.forEach(li => {
-        li.querySelector("select.status").value = "available";
-        li.querySelector("select.priority").value = "";
-        applyRowStyles(li, "available", "");
-        listAvailable.appendChild(li);
+    const entries = getSavedEntries();
+    renderEntries(entries);
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+
+      const formData = new FormData(form);
+      const teamName = String(formData.get("teamName")).trim();
+      const gameDate = formData.get("gameDate");
+      const pitcherName = String(formData.get("pitcherName")).trim();
+      const pitchesThrown = Number(formData.get("pitchesThrown"));
+
+      if (!teamName || !gameDate || !pitcherName || Number.isNaN(pitchesThrown) || pitchesThrown < 1) {
+        return;
+      }
+
+      entries.unshift({
+        teamName,
+        gameDate,
+        pitcherName,
+        pitchesThrown
       });
-
-      sortAndRender();
+      saveEntries(entries);
+      renderEntries(entries);
+      form.reset();
     });
-
-    hydrateFromStorage();
   </script>
 </body>
 </html>
